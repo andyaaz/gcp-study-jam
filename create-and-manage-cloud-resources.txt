@@ -1,0 +1,58 @@
+# Quest: Create and Manage Cloud Resources: Challenge Lab
+# Prepare
+export PROJECT_ID=qwiklabs-gcp-02-0d7c3b9ca66b
+export ZONE=us-east1-b
+export REGION=us-east1
+gcloud compute project-info describe --project="${PROJECT_ID}"
+gcloud config set compute/zone "${ZONE}"
+
+# TASK 1
+gcloud compute instances create nucleus-jumphost --machine-type=f1-micro --zone="${ZONE}"
+
+# TASK 2
+gcloud container clusters create lab-cluster --zone="${ZONE}"
+kubectl create deployment hello-app --image=gcr.io/google-samples/hello-app:2.0
+kubectl expose deployment hello-app --port=8080 --type=LoadBalancer
+
+# TASK 3
+gcloud compute instance-templates create nginx-template \
+   --machine-type="f1-micro" \
+   --region="${REGION}" \
+   --tags=allow-health-check \
+   --metadata=startup-script="#! /bin/bash
+    apt-get update
+    apt-get install -y nginx
+    service nginx start
+    sed -i -- 's/nginx/Google Cloud Platform - '"\$HOSTNAME"'/' /var/www/html/index.nginx-debian.html"
+gcloud compute target-pools create nginx-pool --region="${REGION}"
+gcloud compute instance-groups managed create nginx-group \
+   --base-instance-name=nginx \
+   --template=nginx-template --size=2 --zone="${ZONE}" \
+   --target-pool nginx-pool 
+gcloud compute firewall-rules create www-firewall --allow tcp:80 
+gcloud compute forwarding-rules create nginx-lb \
+  --region "${REGION}" \
+  --ports=80 \
+  --target-pool nginx-pool
+gcloud compute http-health-checks create http-basic-check 
+gcloud compute instance-groups managed \
+  set-named-ports nginx-group \
+  --named-ports http:80
+gcloud compute backend-services create web-backend-service \
+        --protocol=HTTP \
+        --port-name=http \
+        --http-health-checks=http-basic-check \
+        --global
+gcloud compute backend-services add-backend web-backend-service \
+        --instance-group=nginx-group \
+        --instance-group-zone="${ZONE}" \
+        --global
+gcloud compute url-maps create web-map-http \
+        --default-service web-backend-service
+gcloud compute target-http-proxies create http-lb-proxy \
+    --url-map web-map-http
+gcloud compute forwarding-rules create http-content-rule \
+        --global \
+        --target-http-proxy=http-lb-proxy \
+        --ports=80
+
