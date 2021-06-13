@@ -1,0 +1,59 @@
+# Prepare
+export ZONE=us-east1-b
+export REGION=us-east1
+
+# Task 1
+# Add custom role with YAML
+cat <<EOF > role-definition.yaml
+title: "Storage access"
+description: "Storage access"
+stage: "ALPHA"
+includedPermissions:
+- storage.buckets.get
+- storage.objects.get
+- storage.objects.list
+- storage.objects.update
+- storage.objects.create
+EOF
+
+gcloud iam roles create orca_storage_update --project $DEVSHELL_PROJECT_ID \
+--file role-definition.yaml
+
+# Task 2
+# Creating a service account
+gcloud iam service-accounts create orca-private-cluster-sa
+
+# Task 3
+# Granting roles to a service account for specific resources
+gcloud projects add-iam-policy-binding $DEVSHELL_PROJECT_ID \
+    --member serviceAccount:orca-private-cluster-sa@$DEVSHELL_PROJECT_ID.iam.gserviceaccount.com --role projects/${DEVSHELL_PROJECT_ID}/roles/orca_storage_update
+gcloud projects add-iam-policy-binding $DEVSHELL_PROJECT_ID \
+    --member serviceAccount:orca-private-cluster-sa@$DEVSHELL_PROJECT_ID.iam.gserviceaccount.com --role roles/monitoring.viewer
+gcloud projects add-iam-policy-binding $DEVSHELL_PROJECT_ID \
+    --member serviceAccount:orca-private-cluster-sa@$DEVSHELL_PROJECT_ID.iam.gserviceaccount.com --role roles/monitoring.metricWriter
+gcloud projects add-iam-policy-binding $DEVSHELL_PROJECT_ID \
+    --member serviceAccount:orca-private-cluster-sa@$DEVSHELL_PROJECT_ID.iam.gserviceaccount.com --role roles/logging.logWriter
+
+# Task 4
+gcloud compute instances describe orca-jumphost --zone ${ZONE} | grep natIP
+# get external range
+
+# Creating a private cluster that uses a custom subnetwork
+gcloud beta container clusters create orca-test-cluster \
+    --zone=${ZONE} \
+    --service-account=orca-private-cluster-sa@qwiklabs-gcp-00-bf6763f0131d.iam.gserviceaccount.com \
+    --enable-private-endpoint \
+    --enable-private-nodes \
+    --enable-ip-alias \
+    --master-ipv4-cidr 172.16.0.32/28 \
+    --network orca-build-vpc \
+    --subnetwork orca-build-subnet \
+    --enable-master-authorized-networks \
+    --master-authorized-networks 192.168.10.2/32
+
+# Task 5
+
+# Inside jumphost
+gcloud container clusters get-credentials orca-test-cluster --internal-ip
+kubectl create deployment hello-server --image=gcr.io/google-samples/hello-app:1.0
+
