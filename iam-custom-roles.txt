@@ -1,0 +1,56 @@
+# Prepare
+echo "${DEVSHELL_PROJECT_ID}"
+
+# Add custom role with YAML
+cat <<EOF > role-definition.yaml
+title: "Role Editor"
+description: "Edit access for App Versions"
+stage: "ALPHA"
+includedPermissions:
+- appengine.versions.create
+- appengine.versions.delete
+EOF
+
+gcloud iam roles create editor --project $DEVSHELL_PROJECT_ID \
+--file role-definition.yaml
+
+# Add custom role with flags
+gcloud iam roles create viewer --project $DEVSHELL_PROJECT_ID \
+--title "Role Viewer" --description "Custom role description." \
+--permissions compute.instances.get,compute.instances.list --stage ALPHA
+
+# List roles
+gcloud iam roles list --project $DEVSHELL_PROJECT_ID
+
+# Update custom role with YAML (need etag)
+gcloud iam roles describe editor --project $DEVSHELL_PROJECT_ID
+
+cat <<EOF > new-role-definition.yaml
+description: Edit access for App Versions
+etag: [FILL_ME_IN]
+includedPermissions:
+- appengine.versions.create
+- appengine.versions.delete
+- storage.buckets.get
+- storage.buckets.list
+name: projects/${DEVSHELL_PROJECT_ID}/roles/editor
+stage: ALPHA
+title: Role Editor
+EOF
+
+gcloud iam roles update editor --project $DEVSHELL_PROJECT_ID \
+--file new-role-definition.yaml
+
+# Update custom role with flags
+gcloud iam roles update viewer --project $DEVSHELL_PROJECT_ID \
+--add-permissions storage.buckets.get,storage.buckets.list
+
+# Disabling a custom role
+gcloud iam roles update viewer --project $DEVSHELL_PROJECT_ID \
+--stage DISABLED
+
+# Deleting a custom role
+gcloud iam roles delete viewer --project $DEVSHELL_PROJECT_ID
+
+# Undeleting a custom role (witin 7 days)
+gcloud iam roles undelete viewer --project $DEVSHELL_PROJECT_ID
