@@ -1,0 +1,18 @@
+# Prepare
+git clone https://github.com/googlecodelabs/user-authentication-with-iap.git
+cd user-authentication-with-iap
+cd 1-HelloWorld
+
+# Deploy to App Engine (choose region that supports standard)
+gcloud app deploy
+
+gcloud services disable appengineflex.googleapis.com
+
+# Access User Identity Information
+cd ~/user-authentication-with-iap/2-HelloUser
+gcloud app deploy
+
+# Use Cryptographic Verification
+cd ~/user-authentication-with-iap/3-HelloVerifiedUser
+gcloud app deploy
+
