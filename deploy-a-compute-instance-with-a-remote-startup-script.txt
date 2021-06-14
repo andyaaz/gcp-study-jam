@@ -1,0 +1,6 @@
+export BUCKET=gcp-labs-startup-script
+gsutil mb gs://${BUCKET}
+gsutil cp ~/Downloads/resources-install-web.sh gs://${BUCKET}/
+gcloud compute instances create apache --zone us-central1-a --tags=default-allow-http,http-server --metadata=startup-script-url=gs://${BUCKET}/resources-install-web.sh --scopes=storage-ro
+gcloud compute firewall-rules create "allow-http" --allow=tcp:80 --description="allow http traffic" --target-tags=http-server
+
