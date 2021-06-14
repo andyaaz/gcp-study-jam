@@ -1,0 +1,12 @@
+# Running a Basic Apache Web Server
+gcloud compute firewall-rules list
+
+gcloud compute firewall-rules create "default-allow-http" --allow=tcp:80 --description="allow http traffic"
+gcloud compute instances create apache --zone us-central1-a --tags=default-allow-http --metadata=startup-script="#! /bin/bash
+    sudo apt update && sudo apt -y install apache2
+    echo '<!doctype html><html><body><h1>Hello World!</h1></body></html>' | sudo tee /var/www/html/index.html"
+
+# Still need to "Allow HTTP traffic" in the UI though
+
+
+
