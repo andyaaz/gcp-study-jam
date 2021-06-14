@@ -1,6 +1,3 @@
-# Prepare
-# export ZONE=
-
 # Create the managementnet network
 gcloud compute networks create managementnet --project=qwiklabs-gcp-02-204618e3942b --subnet-mode=custom --mtu=1460 --bgp-routing-mode=regional
 gcloud compute networks subnets create managementsubnet-us --project=qwiklabs-gcp-02-204618e3942b --range=10.130.0.0/20 --network=managementnet --region=us-central1
