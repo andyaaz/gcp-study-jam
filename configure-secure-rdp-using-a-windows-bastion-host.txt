@@ -1,0 +1,10 @@
+export PROJECT_ID=qwiklabs-gcp-02-77b1bfde715c
+# VPC
+gcloud compute networks create securenetwork --project=${PROJECT_ID} --subnet-mode=custom
+gcloud compute networks subnets create securesubnet-us --project=${PROJECT_ID} --range=10.8.0.0/20 --network=securenetwork --region=us-central1
+
+gcloud compute firewall-rules create allow-rdp --priority=1000 --network=securenetwork --action=ALLOW --rules=tcp:3389 --target-tags=rdp
+gcloud compute instances create vm-securehost --image-project=windows-cloud --image-family=windows-2016 --zone=us-central1-a --machine-type=n1-standard-4 --network-interface=network=securenetwork,subnet=securesubnet-us,no-address --network-interface=network=default,no-address
+gcloud compute instances create vm-bastionhost --image-project=windows-cloud --image-family=windows-2016 --zone=us-central1-a --machine-type=n1-standard-4 --network-interface=network=securenetwork,subnet=securesubnet-us --network-interface=network=default --tags=rdp
+gcloud compute reset-windows-password vm-bastionhost --user app_admin --zone us-central1-a
+
