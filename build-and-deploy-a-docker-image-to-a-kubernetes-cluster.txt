@@ -1,0 +1,13 @@
+# Prep
+export zone=us-central1-a
+export project_id=qwiklabs-gcp-04-2e1aa2fb83d6
+
+# Create a Kubernetes Cluster
+gcloud container clusters create echo-cluster --zone ${zone} --machine-type=n1-standard-2 --num-nodes=2
+
+# Build a tagged Docker Image
+docker build --tag "gcr.io/${project_id}/echo-app:v1" resources-echo-web
+docker push "gcr.io/${project_id}/echo-web:v1" 
+
+# Deploy the application to the Kubernetes Cluster
+kubectl apply -f manifests/echoweb-deployment.yaml -f manifests/echoweb-ingress-static-ip.yaml
