@@ -1,0 +1,15 @@
+# Prep
+export project_id=qwiklabs-gcp-03-0b07c6c7c54d
+export APP=echo-web-v2
+gsutil cp -r "gs://${project_id}/echo-web-v2.tar.gz" "${APP}.tar.gz"
+mkdir ${APP}
+tar -xvf "${APP}.tar.gz" -C ${APP} # check if app is nested
+cd ${APP}
+gcloud container clusters get-credentials echo-cluster --zone=us-central1-a
+
+# Build a tagged Docker Image
+docker build --tag "gcr.io/${project_id}/echo-app:v2" .
+docker push "gcr.io/${project_id}/echo-app:v2" 
+
+# Deploy the application to the Kubernetes Cluster, update files
+kubectl apply -f manifests/echoweb-deployment.yaml 
