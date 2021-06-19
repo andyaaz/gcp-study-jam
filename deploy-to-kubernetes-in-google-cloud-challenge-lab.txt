@@ -1,0 +1,40 @@
+# Prep
+export region=us-east1
+export zone=us-east1-b
+export machine_type=n1-standard-1
+export app=valkyrie-app
+
+# Task 1: Create a Docker image and store the Dockerfile
+source <(gsutil cat gs://cloud-training/gsp318/marking/setup_marking.sh)
+git clone https://source.developers.google.com/p/$DEVSHELL_PROJECT_ID/r/$app
+cd $app
+
+# Task 2: Test the created Docker image
+cat <<EOF > Dockerfile
+FROM golang:1.10
+WORKDIR /go/src/app
+COPY source .
+RUN go install -v
+ENTRYPOINT ["app","-single=true","-port=8080"]
+EOF
+docker build -t gcr.io/$DEVSHELL_PROJECT_ID/valkyrie-app:v0.0.1 .
+
+# Task 3: Push the Docker image in the Container Repository
+docker push gcr.io/$DEVSHELL_PROJECT_ID/valkyrie-app:v0.0.1
+
+# Task 4: Create and expose a deployment in Kubernetes
+# update k8s/
+kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml
+
+# Task 5: Update the deployment with a new version of valkyrie-app
+kubectl scale deployment valkyrie-dev --replicas=3
+
+git merge origin/kurt-dev
+docker build -t gcr.io/$DEVSHELL_PROJECT_ID/valkyrie-app:v0.0.2 .
+docker push gcr.io/$DEVSHELL_PROJECT_ID/valkyrie-app:v0.0.2
+
+# Task 6: Create a pipeline in Jenkins to deploy your app
+printf $(kubectl get secret cd-jenkins -o jsonpath="{.data.jenkins-admin-password}" | base64 --decode);echo
+export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/component=jenkins-master" -l "app.kubernetes.io/instance=cd" -o jsonpath="{.items[0].metadata.name}")
+kubectl port-forward $POD_NAME 8080:8080 >> /dev/null &
+
