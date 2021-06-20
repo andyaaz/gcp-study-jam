@@ -1,0 +1,28 @@
+# Clone Source Repository
+git clone https://github.com/googlecodelabs/monolith-to-microservices.git
+cd ~/monolith-to-microservices
+./setup.sh
+
+# Create Docker Container with Cloud Build
+gcloud services enable cloudbuild.googleapis.com
+gcloud builds submit --tag gcr.io/${GOOGLE_CLOUD_PROJECT}/monolith:1.0.0 .
+
+# Deploy Container To Cloud Run
+gcloud services enable run.googleapis.com
+gcloud run deploy --image=gcr.io/${GOOGLE_CLOUD_PROJECT}/monolith:1.0.0 --platform managed
+
+# Create new revision with lower concurrency
+gcloud run deploy --image=gcr.io/${GOOGLE_CLOUD_PROJECT}/monolith:1.0.0 --platform managed --concurrency 1
+# after check
+gcloud run deploy --image=gcr.io/${GOOGLE_CLOUD_PROJECT}/monolith:1.0.0 --platform managed --concurrency 80
+
+# Make Changes To The Website
+cd ~/monolith-to-microservices/react-app/src/pages/Home
+mv index.js.new index.js
+cd ~/monolith-to-microservices/react-app
+npm run build:monolith
+cd ~/monolith-to-microservices/monolith
+gcloud builds submit --tag gcr.io/${GOOGLE_CLOUD_PROJECT}/monolith:2.0.0 .
+
+# Update website with zero downtime
+gcloud run deploy --image=gcr.io/${GOOGLE_CLOUD_PROJECT}/monolith:2.0.0 --platform managed
