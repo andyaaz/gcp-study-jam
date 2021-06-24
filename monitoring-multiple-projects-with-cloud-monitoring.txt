@@ -1,0 +1,1 @@
+gcloud compute instances create instance2 --project=qwiklabs-gcp-03-591f1898d188 --zone=us-central1-a
