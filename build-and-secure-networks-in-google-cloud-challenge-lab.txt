@@ -1,0 +1,31 @@
+# Prep 
+export PROJECT_ID=qwiklabs-gcp-02-d8cfc9efa504
+export EMAIL=student-01-73c6e1f65f20@qwiklabs.net
+gcloud compute firewall-rules delete open-access
+gcloud compute firewall-rules create allow-ssh-from-iap \
+    --network acme-vpc \
+    --allow tcp:22 \
+    --target-tags allow-ssh
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member=user:$EMAIL \
+    --role=roles/iap.tunnelResourceAccessor
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member=user:$EMAIL \
+    --role=roles/compute.instanceAdmin.v1
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member=user:$EMAIL \
+    --role=roles/iam.serviceAccountUser
+
+gcloud compute firewall-rules create allow-http \
+    --network acme-vpc \
+    --source-ranges 0.0.0.0/0 \
+    --allow tcp:80 \
+    --target-tags allow-http
+    
+gcloud compute firewall-rules create allow-ssh-from-bastion \
+    --network acme-vpc \
+    --source-ranges 192.168.10.0/24 \
+    --allow tcp:22 \
+    --target-tags allow-ssh-from-bastion
+
