@@ -1,0 +1,11 @@
+export REGION=us-east1
+export ZONE=us-east1-b
+gsutil mb gs://labsgcp123
+gsutil cp -r gs://spls/gsp087/* gs://labsgcp123
+gcloud compute instance-templates create autoscaling-instance01 \
+   --machine-type="n1-standard-1" \
+   --region="${REGION}" \
+   --metadata=startup-script-url=gs://labsgcp123/startup.sh,gcs-bucket=gs://labsgcp123
+gcloud beta compute instance-groups managed create autoscaling-instance-group-1 --template=autoscaling-instance01 --size=1 --zone="${ZONE}"
+# gcloud beta compute instance-groups managed set-autoscaling "autoscaling-instance-group-1" --zone ${ZONE} --cool-down-period "45" --max-num-replicas "5" --min-num-replicas "1" --target-cpu-utilization "0.8" --mode "on"
+
