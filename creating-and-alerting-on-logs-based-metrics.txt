@@ -1,0 +1,8 @@
+# Create resources
+export PROJECT_ID=qwiklabs-gcp-02-fa37f74fd116
+git clone https://github.com/GoogleCloudPlatform/appengine-guestbook-python
+cd appengine-guestbook-python/
+gcloud app create --project $PROJECT_ID
+gcloud app deploy --project $PROJECT_ID --version 1
+gcloud datastore indexes create --project $PROJECT_ID index.yaml
+
